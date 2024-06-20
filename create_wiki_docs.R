@@ -4,17 +4,16 @@
 
 # Load necessary libraries
 library(officer)
+library(pandoc)
 library(rmarkdown)
 library(git2r)
 
-# Function to convert a Word document to Markdown
-convert_docx_to_md <- function(input_file, output_file) {
-  rmarkdown::pandoc_convert(input_file, to = "markdown", output = output_file)
-}
+# Set Pandoc path
+options(rmarkdown.pandoc.path = 'C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools')
 
 # Define paths
-input_directory <- "word_docs/" # Directory containing Word documents
-output_directory <- "my-wiki/_posts" # Directory where Markdown files will be saved
+input_directory <- normalizePath("word_docs-lf/")
+output_directory <- normalizePath("my-wiki/_posts")
 
 # Ensure output directory exists
 if (!dir.exists(output_directory)) {
@@ -27,11 +26,15 @@ input_files <- list.files(input_directory, pattern = "\\.docx$", full.names = TR
 # Convert all Word documents to Markdown
 for (input_file in input_files) {
   output_file <- file.path(output_directory, gsub("\\.docx$", ".md", basename(input_file)))
-  convert_docx_to_md(input_file, output_file)
+  tryCatch({
+    rmarkdown::pandoc_convert(input_file, to = "markdown", output = output_file)
+  }, error = function(e) {
+    message("Error converting ", input_file, " to Markdown: ", e)
+  })
 }
 
 # Git operations
-repo <- repository("my-wiki")
+repo <- repository(normalizePath("my-wiki"))
 add(repo, "*")
 commit(repo, "Add converted markdown files")
 # Use your personal access token for authentication
